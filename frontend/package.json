@@ -10,13 +10,20 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@faker-js/faker": "^9.9.0",
     "@tailwindcss/postcss": "^4.1.11",
     "@tailwindcss/vite": "^4.1.11",
+    "@tanstack/react-table": "^8.21.3",
+    "@thatopen/components": "^3.1.0",
+    "@thatopen/components-front": "^3.1.0",
+    "@thatopen/ui": "^3.1.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.525.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "three": "^0.152.2",
-    "web-ifc-viewer": "^1.0.218",
-    "web-ifc-viewer-root": "github:IFCjs/web-ifc-viewer"
+    "tailwind-merge": "^3.3.1",
+    "three": "^0.178.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
@@ -30,6 +37,8 @@
     "globals": "^16.3.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.11",
-    "vite": "^7.0.4"
+    "tw-animate-css": "^1.3.5",
+    "vite": "^7.0.4",
+    "vite-tsconfig-paths": "^5.1.4"
   }
 }
