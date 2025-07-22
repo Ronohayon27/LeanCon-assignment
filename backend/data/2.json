@@ -1,0 +1,96 @@
+{
+  "metadata": {
+    "extraction_timestamp": "2025-07-22T20:01:34.663891",
+    "total_processed_elements": 7,
+    "total_aggregated_groups": 5,
+    "ifc_schema": "IFC4",
+    "all_levels": [
+      "Level 1",
+      "Level 2"
+    ]
+  },
+  "data": [
+    {
+      "name": "Concrete-Rectangular Beam:300 x 600mm",
+      "type": "IfcBeam",
+      "volume": 0.612,
+      "length": 4000.0,
+      "area": 6.48,
+      "total": 1,
+      "levels": {
+        "Level 2": {
+          "count": 1,
+          "expressIds": [
+            364
+          ]
+        }
+      }
+    },
+    {
+      "name": "Concrete-Rectangular-Column:450 x 600mm",
+      "type": "IfcColumn",
+      "volume": 1.62,
+      "length": 6000.0,
+      "area": 12.6,
+      "total": 2,
+      "levels": {
+        "Level 1": {
+          "count": 2,
+          "expressIds": [
+            163,
+            228
+          ]
+        }
+      }
+    },
+    {
+      "name": "Concrete-Rectangular-Column:600 x 750mm",
+      "type": "IfcColumn",
+      "volume": 3.33,
+      "length": 7400.0,
+      "area": 19.98,
+      "total": 2,
+      "levels": {
+        "Level 1": {
+          "count": 2,
+          "expressIds": [
+            265,
+            313
+          ]
+        }
+      }
+    },
+    {
+      "name": "Floor:Generic 300mm",
+      "type": "IfcSlab",
+      "volume": 7.624,
+      "length": 66.437,
+      "area": 25.415,
+      "total": 1,
+      "levels": {
+        "Level 2": {
+          "count": 1,
+          "expressIds": [
+            518
+          ]
+        }
+      }
+    },
+    {
+      "name": "Basic Wall:Generic - 300mm",
+      "type": "IfcWall",
+      "volume": 0.6,
+      "length": 300.0,
+      "area": 2.0,
+      "total": 1,
+      "levels": {
+        "Level 2": {
+          "count": 1,
+          "expressIds": [
+            436
+          ]
+        }
+      }
+    }
+  ]
+}
