@@ -1,0 +1,19 @@
+
+
+// would have been in the .env file
+const BASE_API_URL = "http://localhost:8000/api/v1";
+
+/**
+ * Build full URL to a specific API route
+ * @param {string} route - e.g. "geometry/2"
+ * @returns {string} full URL
+ */
+function apiUrl() {
+  return `${BASE_API_URL}`;
+}
+
+
+export function geometryRoute(){
+    return `${apiUrl()}/geometry`
+}
+

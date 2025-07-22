@@ -6,7 +6,7 @@ import * as OBC from "@thatopen/components";
 import * as OBF from "@thatopen/components-front";
 import * as THREE from "three";
 
-export default function IfcViewer({ selectedElementIds = [] }) {
+export default function IfcViewer({ selectedElementIds = [], modelPath }) {
   const containerRef = useRef(null);
   const viewerRef = useRef(null);
   const componentsRef = useRef(null);
@@ -120,6 +120,9 @@ export default function IfcViewer({ selectedElementIds = [] }) {
       // Create grid component
       const grids = components.get(OBC.Grids);
       const grid = grids.create(world);
+      grid.three.position.set(0, 0, 0); // Set XYZ position
+      grid.three.updateMatrixWorld(true);
+      grid.three.visible = true;
 
       const ifcLoader = components.get(OBC.IfcLoader);
       await ifcLoader.setup({
@@ -149,7 +152,7 @@ export default function IfcViewer({ selectedElementIds = [] }) {
       // (converted from the IFC in this case),
       // it utilizes the world camera for updates
       // and is added to the scene.
-      fragments.list.onItemSet.add(({ value: model }) => {
+      fragments.list.onItemSet.add(async ({ value: model }) => {
         model.useCamera(world.camera.three);
         world.scene.three.add(model.object);
         fragments.core.update(true);
@@ -158,95 +161,50 @@ export default function IfcViewer({ selectedElementIds = [] }) {
         modelRef.current = model;
         console.log("Model reference stored:", model);
 
-        // Position grid at the bottom of the model
-        try {
-          // Wait a bit for the model to be fully processed
-          setTimeout(() => {
-            let bbox = null;
-            let minY = 0; // Default fallback
+        // Debug coordinate system and find correct entry level position
+        console.log("🔍 Debugging model coordinate system...");
 
-            try {
-              // Method 1: Try to get bounding box from the model object
-              if (model.object) {
-                const box = new THREE.Box3();
-                box.setFromObject(model.object);
+        // Get model bounding box for reference
+        const box = new THREE.Box3().setFromObject(model.object);
+        console.log("Model bounding box:", {
+          min: { x: box.min.x, y: box.min.y, z: box.min.z },
+          max: { x: box.max.x, y: box.max.y, z: box.max.z },
+          size: {
+            x: box.max.x - box.min.x,
+            y: box.max.y - box.min.y,
+            z: box.max.z - box.min.z,
+          },
+        });
 
-                // Check if the box is valid (not infinity)
-                if (box.min.y !== Infinity && box.max.y !== -Infinity) {
-                  bbox = box;
-                  minY = bbox.min.y;
-                  console.log("Successfully computed bounding box:", bbox);
-                } else {
-                  console.log(
-                    "Bounding box has invalid values, trying alternative method"
-                  );
-                }
-              }
+        // Based on your IFC data:
+        // Entry Level: 0.0 mm = 0.0 m
+        // 02 - Floor: 3800 mm = 3.8 m
+        // If grid at Y=0 appears at 02 - Floor, then entry level is likely at Y = -3.8
 
-              // Method 2: If still no valid bbox, traverse children and find actual geometry
-              if (!bbox || minY === Infinity) {
-                let foundValidGeometry = false;
-                const tempBox = new THREE.Box3();
+        // Try positioning grid at different Y levels to find entry level
+        const possibleEntryLevelY = -2.5; // Negative of the 02 - Floor elevation
 
-                model.object.traverse((child) => {
-                  if (
-                    child.geometry &&
-                    child.geometry.attributes &&
-                    child.geometry.attributes.position
-                  ) {
-                    child.geometry.computeBoundingBox();
-                    if (
-                      child.geometry.boundingBox &&
-                      child.geometry.boundingBox.min.y !== Infinity
-                    ) {
-                      tempBox.expandByObject(child);
-                      foundValidGeometry = true;
-                    }
-                  }
-                });
+        grid.three.position.set(0, possibleEntryLevelY, 0);
+        grid.three.visible = true;
+        console.log(
+          `✅ Grid positioned at Y = ${possibleEntryLevelY} (attempting to match entry level)`
+        );
 
-                if (foundValidGeometry && tempBox.min.y !== Infinity) {
-                  bbox = tempBox;
-                  minY = bbox.min.y;
-                  console.log("Found valid geometry bounding box:", bbox);
-                }
-              }
-
-              // Method 3: Final fallback - use a reasonable default based on model center
-              if (!bbox || minY === Infinity || minY === -Infinity) {
-                console.log("Using default grid position");
-                minY = -1; // Place grid slightly below origin
-              }
-            } catch (error) {
-              console.warn("Error computing bounding box:", error);
-              minY = -1; // Safe fallback
-            }
-
-            // Position the grid
-            grid.three.position.y = minY - 0.1;
-            grid.three.visible = true;
-
-            console.log("Final grid position Y:", minY - 0.1);
-            console.log("Grid visibility:", grid.three.visible);
-          }, 1000); // Wait 1 second for model to be fully processed
-
-          // Ensure grid is visible
-          grid.three.visible = true;
-          console.log("Grid created and positioned");
-        } catch (error) {
-          console.warn("Error positioning grid:", error);
-          // Fallback: ensure grid is at least visible at origin
-          grid.three.position.y = 0;
-          grid.three.visible = true;
-        }
+        // Also log some reference points for debugging
+        console.log("📊 IFC Elevation Reference:");
+        console.log("  Entry Level (IFC): 0.0 mm = 0.0 m");
+        console.log("  02 - Floor (IFC): 3800 mm = 3.8 m");
+        console.log(
+          "  If grid at Y=0 shows 02 - Floor, then entry level is at Y = -3.8"
+        );
       });
 
       // Load the IFC file
-      await loadIfc("/ifc/simple_example.ifc", ifcLoader);
+      await loadIfc(modelPath, ifcLoader);
     };
 
     init();
-  }, []);
+  }, [modelPath]); // Re-initialize when model path changes
 
   // Effect for highlighting elements when selectedElementIds changes
   useEffect(() => {
@@ -316,9 +274,8 @@ export default function IfcViewer({ selectedElementIds = [] }) {
 
             // If direct mapping fails, try with just the main model
             console.log("Trying with main model only...");
-            const mainModelId = "example"; // Based on what we saw in the logs
             const simpleMap = {
-              [mainModelId]: new Set(expressIds),
+              "ifc-model": new Set(expressIds),
             };
 
             console.log("Simple mapping:", simpleMap);
@@ -340,29 +297,16 @@ export default function IfcViewer({ selectedElementIds = [] }) {
       const data = await file.arrayBuffer();
       const buffer = new Uint8Array(data);
 
-      // Load the model
-      await ifcLoader.load(buffer, false, "example", {
+      // Load the model with a simple name
+      await ifcLoader.load(buffer, false, "ifc-model", {
         processData: {
           progressCallback: (progress) => console.log(progress),
         },
       });
-
-      console.log("IFC model loaded successfully");
-
-      // After loading, try to map express IDs to meshes for easier highlighting
-      if (viewerRef.current && viewerRef.current.components) {
-        const { components } = viewerRef.current;
-        const fragments = components.get(OBC.FragmentsManager);
-
-        // Log fragments information for debugging
-        console.log("Fragments after loading:", fragments);
-        if (fragments && fragments.groups) {
-          console.log("Fragments groups:", fragments.groups);
-        }
-      }
     } catch (error) {
-      console.error("Error loading IFC model:", error);
+      console.error("❌ Error loading IFC model:", error);
     }
   };
+
   return <div ref={containerRef} style={{ width: "100%", height: "100vh" }} />;
 }
