@@ -1,9 +1,7 @@
 from fastapi import APIRouter, HTTPException, Path
-from app.services.ifc_parser import get_element_summary
 from app.core.config import settings
 import os
 import json
-from typing import Dict, Any
 
 router = APIRouter()
 

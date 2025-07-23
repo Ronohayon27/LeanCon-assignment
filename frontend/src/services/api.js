@@ -1,7 +1,7 @@
 
 
-// would have been in the .env file
-const BASE_API_URL = "http://localhost:8000/api/v1";
+// Get API URL from environment variable or fallback to localhost
+const BASE_API_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/v1` : "http://localhost:8000/api/v1";
 
 /**
  * Build full URL to a specific API route
