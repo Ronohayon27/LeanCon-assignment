@@ -4,10 +4,10 @@ import { Building, Hash, Info } from "lucide-react";
 
 export default function Sidebar({ models = [], activeModelId, onModelSelect }) {
   return (
-    <div className="w-64 h-full bg-gradient-to-b from-slate-50 to-slate-100 border-r border-slate-200 flex flex-col shadow-inner">
+    <div className="w-64 h-full bg-gradient-to-b from-slate-50 to-yellow-100 border-r border-slate-200 flex flex-col shadow-inner">
       <div className="p-5 border-b border-slate-200 bg-white">
         <h2 className="text-lg font-semibold text-slate-800 flex items-center">
-          <Building className="w-5 h-5 mr-2 text-blue-600" />
+          <Building className="w-5 h-5 mr-2 text-yellow-500" />
           IFC Models
         </h2>
       </div>
@@ -17,20 +17,26 @@ export default function Sidebar({ models = [], activeModelId, onModelSelect }) {
           {models.map((model) => (
             <li
               key={model.id}
-              className="overflow-hidden rounded-lg transition-all duration-200 hover:shadow-md"
+              className={`overflow-hidden rounded-lg transition-all duration-300 ${
+                activeModelId === model.id
+                  ? "shadow-md z-10 scale-[1.02]"
+                  : "hover:shadow-md"
+              }`}
             >
               <Button
                 onClick={() => onModelSelect(model.id)}
                 variant={activeModelId === model.id ? "secondary" : "ghost"}
                 size="lg"
                 className={`w-full justify-start h-[70px] py-5 ${
-                  activeModelId === model.id ? "border-l-4 border-blue-500" : ""
+                  activeModelId === model.id
+                    ? "border-l-4 border-yellow-500"
+                    : ""
                 }`}
               >
                 <Building
                   className={`mr-2 h-5 w-5 ${
                     activeModelId === model.id
-                      ? "text-blue-600"
+                      ? "text-yellow-600"
                       : "text-slate-500"
                   }`}
                 />
@@ -38,7 +44,7 @@ export default function Sidebar({ models = [], activeModelId, onModelSelect }) {
                   <div
                     className={`font-medium ${
                       activeModelId === model.id
-                        ? "text-blue-700"
+                        ? "text-yellow-700"
                         : "text-slate-700"
                     }`}
                   >
@@ -55,7 +61,7 @@ export default function Sidebar({ models = [], activeModelId, onModelSelect }) {
         </ul>
       </div>
 
-      <div className="p-3 bg-slate-50 border-t border-slate-200">
+      <div className="p-3 bg-yellow-100 border-slate-200">
         <div className="text-xs text-slate-500 flex items-center justify-center">
           <Info className="w-3 h-3 mr-1" />
           {models.length} models available

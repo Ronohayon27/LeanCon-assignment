@@ -141,9 +141,9 @@ export default function ModelsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-100 to-gray-200">
-      <header className="w-full bg-white shadow-sm py-4 px-6">
-        <h1 className="text-2xl font-bold text-gray-800">
-          LeanCon IFC Model Analyzer
+      <header className="w-full bg-white shadow-sm py-4 px-6 border-b">
+        <h1 className="text-2xl font-bold text-gray-800 pl-10">
+          IFC Model Analyzer
         </h1>
       </header>
 

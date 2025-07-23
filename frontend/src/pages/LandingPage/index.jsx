@@ -4,66 +4,87 @@ import { ArrowRight, CheckCircle } from "lucide-react";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-blue-700 flex flex-col items-center justify-center p-6">
-      <header className="max-w-4xl w-full mb-12 text-center">
-        <h1 className="text-5xl font-bold text-white mb-4 drop-shadow-lg">
-          LeanCon IFC Analyzer
-        </h1>
-        <p className="text-xl text-white/90 mb-2 drop-shadow">
-          Advanced BIM Model Analysis & Visualization
-        </p>
-      </header>
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* 🔽 Background image with dark overlay - Netflix style */}
+      <div className="absolute inset-0 z-10">
+        <img
+          src="/img/leancon.webp"
+          alt="LeanCon city background"
+          className="object-cover w-full h-full scale-100 fill-accent transform-gpu" /* Slightly zoomed out */
+        />
+        {/* Darker overlay with gradient for Netflix-style effect */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/10" />
+      </div>
 
-      <main className="max-w-4xl w-full bg-white rounded-xl shadow-2xl overflow-hidden p-8 border border-blue-100">
-        <div className="grid md:grid-cols-2 gap-8 items-center">
-          <div>
-            <h2 className="text-3xl font-bold text-blue-800 mb-4">
-              Intelligent IFC Data Analysis
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Our platform provides powerful tools for analyzing and visualizing
-              Building Information Models (BIM). Extract valuable insights from
-              your IFC files including:
-            </p>
-            <ul className="space-y-2 mb-8">
-              <li className="flex items-start">
-                <CheckCircle className="h-6 w-6 text-green-500 mr-2" />
-                <span className="text-gray-700">Element quantities by type and level</span>
-              </li>
-              <li className="flex items-start">
-                <CheckCircle className="h-6 w-6 text-green-500 mr-2" />
-                <span className="text-gray-700">Interactive 3D visualization</span>
-              </li>
-              <li className="flex items-start">
-                <CheckCircle className="h-6 w-6 text-green-500 mr-2" />
-                <span className="text-gray-700">Level-based element filtering</span>
-              </li>
-            </ul>
-            <Button asChild size="lg" className="mt-2">
-              <Link to="/models">
-                View Your Models
-                <ArrowRight className="ml-1" />
-              </Link>
-            </Button>
-          </div>
-          <div className="hidden md:block">
-            <div className="bg-blue-50 p-6 rounded-lg shadow-inner border border-blue-100">
-              <img
-                src="/img/bim-illustration.svg"
-                alt="BIM Illustration"
-                className="w-full h-auto"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src =
-                    "https://via.placeholder.com/400x300/e2f0ff/2563eb?text=BIM+Analysis";
-                }}
-              />
+      {/* 🔼 Main content - Netflix style */}
+      <div className="relative z-10 max-w-5xl w-full text-white px-6">
+        <header className="text-center mb-4">
+          <h1 className="text-6xl font-bold mb-6 drop-shadow-xl tracking-tight">
+            IFC Analyzer
+          </h1>
+          <p className="text-2xl text-white/90 drop-shadow max-w-2xl mx-auto">
+            Advanced BIM Model Analysis & Visualization
+          </p>
+        </header>
+
+        <main className="bg-black/30 backdrop-blur-sm rounded-xl p-10 shadow-2xl border border-white/10">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-4xl font-bold text-white mb-6">
+                Intelligent IFC Data Analysis
+              </h2>
+              <p className="text-white/90 mb-8 text-lg">
+                This app provides interactive 3D visualization of IFC files
+                using Three.js, along with a structured quantities table by
+                element type and level. It supports element highlighting,
+                selection, enabling clear and efficient exploration of building
+                models for analysis and review.
+              </p>
+              <ul className="space-y-4 mb-10">
+                <li className="flex items-start">
+                  <CheckCircle className="h-6 w-6 text-yellow-400 mr-3 hover:scale-110 transition-all duration-300" />
+                  <span className="text-lg">
+                    Element quantities by type and level
+                  </span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="h-6 w-6 text-yellow-400 mr-3 hover:scale-110 transition-all duration-300" />
+                  <span className="text-lg">Interactive 3D visualization</span>
+                </li>
+                <li className="flex items-start">
+                  <CheckCircle className="h-6 w-6 text-yellow-400 mr-3 hover:scale-110 transition-all duration-300" />
+                  <span className="text-lg">Level-based element filtering</span>
+                </li>
+              </ul>
+              <Button
+                asChild
+                size="lg"
+                className="bg-yellow-400 hover:bg-yellow-500 hover:text-black text-white text-lg py-6 px-8 rounded-md font-medium transition-all duration-300 shadow-lg"
+              >
+                <Link to="/models">
+                  View Your Models
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+            </div>
+            <div className="hidden md:block">
+              <div className="p-3 bg-black/50 backdrop-blur-md rounded-lg border border-white/10 shadow-xl overflow-hidden transform transition-all hover:scale-[1.02] duration-500">
+                <img
+                  src="/img/bim-illustration.svg"
+                  alt="BIM Illustration"
+                  className="w-full h-auto rounded filter drop-shadow-lg"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src =
+                      "https://via.placeholder.com/500x350/1e1e1e/ff3e3e?text=BIM+Analysis";
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60 pointer-events-none"></div>
+              </div>
             </div>
           </div>
-        </div>
-      </main>
-
-
+        </main>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
-
+import { Button } from "../ui/button";
+import { ArrowUpDown } from "lucide-react";
 // Base columns that are always present
 const baseColumns = [
   {
@@ -18,7 +19,20 @@ const baseColumns = [
   },
   {
     accessorKey: "total",
-    header: () => "Total",
+    header: ({ column }) => {
+      return (
+        <>
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="p-1 h-auto w-auto hover:bg-gray-200! rounded-md cursor-pointer"
+          >
+            <span className="truncate">Total</span>
+            <ArrowUpDown className="h-4 w-4" />
+          </Button>
+        </>
+      );
+    },
     cell: ({ row }) => <div className="font-bold">{row.getValue("total")}</div>,
   },
   {
@@ -60,7 +74,7 @@ export const createColumns = (
       const isSelected = selectedLevel === level;
       return (
         <div
-          className={`cursor-pointer p-1 rounded transition-colors ${
+          className={`cursor-pointer p-1 rounded transition-colors truncate ${
             isSelected
               ? "bg-blue-500 text-white font-semibold"
               : "hover:bg-blue-100 hover:text-blue-700"
