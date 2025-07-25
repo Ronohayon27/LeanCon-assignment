@@ -38,7 +38,6 @@ def get_element_level_with_fallback(element, ifc_file):
                     if structure.is_a('IfcBuildingStorey'):
                         level_name = structure.Name
                         if level_name:
-                            print("fount the name in method 1", level_name)
                             return level_name
                         return f"Level_{structure.GlobalId[:8]}"
         
@@ -49,7 +48,6 @@ def get_element_level_with_fallback(element, ifc_file):
                 if structure.is_a('IfcBuildingStorey'):
                     level_name = structure.Name
                     if level_name:
-                        print("fount the name in method 2", level_name)
                         return level_name
                     return f"Level_{structure.GlobalId[:8]}"
         
@@ -64,12 +62,10 @@ def get_element_level_with_fallback(element, ifc_file):
                                 # Look for Reference Level property specifically
                                 if prop.Name and 'reference level' in prop.Name.lower():
                                     if prop.NominalValue:
-                                        print("fount the name in method 3 with refrences level",str(prop.NominalValue.wrappedValue))
                                         return str(prop.NominalValue.wrappedValue)
                                 # Look for Work Plane property as fallback
                                 elif prop.Name and 'work plane' in prop.Name.lower():
                                     if prop.NominalValue:
-                                        print("fount the name in method 3 with work plane",str(prop.NominalValue.wrappedValue))
                                         return str(prop.NominalValue.wrappedValue)
         except:
             pass
