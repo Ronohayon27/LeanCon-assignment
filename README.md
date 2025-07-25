@@ -1,117 +1,198 @@
-# LeanCon Assignment
+# LeanCon IFC Viewer
 
-This project consists of a frontend React application and a backend FastAPI service for working with IFC models. The application allows visualization and analysis of IFC (Industry Foundation Classes) data.
+> A modern web application for visualizing and analyzing IFC (Industry Foundation Classes) building models with advanced 3D rendering capabilities.
+
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue?logo=docker)](https://www.docker.com/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Backend-green?logo=fastapi)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-Frontend-blue?logo=react)](https://reactjs.org/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Database-green?logo=mongodb)](https://www.mongodb.com/)
 
 ## Table of Contents
-- [Running with Docker (Recommended)](#running-with-docker-recommended)
-- [Running Without Docker](#running-without-docker)
-- [Project Structure](#project-structure)
-- [Features](#features)
+- [Quick Start](#-quick-start)
+- [Docker Architecture](#-docker-architecture)
+- [Application Architecture](#-application-architecture)
+- [Development Setup](#-development-setup)
+- [Manual Installation](#-manual-installation)
+- [Project Structure](#-project-structure)
+- [Features](#-features)
+- [Technology Stack](#-technology-stack)
+- [Troubleshooting](#-troubleshooting)
 
-## Running with Docker (Recommended)
+## Quick Start
 
 ### Prerequisites
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
 - Git installed
 
-### Step-by-Step Instructions
+### One-Command Setup
+```bash
+# Clone the repository
+git clone <your-repository-url>
+cd LeanCon-assignment
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd LeanCon-assignment
-   ```
+# Build and start all services
+docker-compose up --build
+```
 
-2. **Build and start the containers**
-   ```bash
-   # This command builds fresh images and starts the containers
-   docker-compose up --build
-   ```
+### Access Points
+- Frontend: [http://localhost:5173](http://localhost:5173)
+- Backend API: [http://localhost:8000](http://localhost:8000)
+- API Documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-   > **Note:** The first build will take several minutes as it needs to download and install all dependencies. Subsequent builds will be faster.
+---
 
-3. **Access the application**
-   - Frontend: [http://localhost:5173](http://localhost:5173)
-   - Backend API: [http://localhost:8000](http://localhost:8000)
+## Docker Architecture
 
-4. **Stop the containers**
-   ```bash
-   # Press Ctrl+C in the terminal where docker-compose is running
-   # Or run this in a new terminal:
-   docker-compose down
-   ```
+Our application uses a **3-tier containerized architecture** orchestrated by Docker Compose:
 
-### Troubleshooting Docker Setup
+```mermaid
+graph TB
+    subgraph "Docker Environment"
+        F[Frontend Container<br/>React + Vite<br/>Port: 5173]
+        B[Backend Container<br/>FastAPI + Python<br/>Port: 8000]
+        M[MongoDB Container<br/>Database<br/>Port: 27017]
+    end
+    
+    F --> B
+    B --> M
+    
+    U[User Browser] --> F
+    F --> U
+```
 
-If you encounter issues with Docker:
+### Service Configuration
 
-1. **Ensure Docker Desktop is running**
-   - Check for the Docker icon in your system tray/menu bar
-   - Open Docker Desktop application if it's not running
+| Service | Technology | Port | Purpose |
+|---------|------------|------|----------|
+| **Frontend** | React 19 + Vite | 5173 | 3D IFC model visualization |
+| **Backend** | FastAPI + Python 3.11 | 8000 | IFC processing & REST API |
+| **Database** | MongoDB | 27017 | IFC data storage |
 
-2. **Force a completely fresh build**
-   ```bash
-   # Remove all containers, images, and volumes related to this project
-   docker-compose down --rmi all --volumes
-   
-   # Build and start again
-   docker-compose up --build
-   ```
+### Volume Mounts (Development)
+- **Hot Reloading**: Code changes reflect instantly without rebuilding
+- **Persistent Data**: MongoDB data survives container restarts
+- **Node Modules**: Optimized dependency management
 
-3. **Check Docker logs**
-   ```bash
-   docker-compose logs
-   ```
+---
 
-4. **Verify network connectivity**
-   - Make sure ports 5173 and 8000 are not being used by other applications
+## Application Architecture
 
-## Running Without Docker
+### Backend Architecture (FastAPI)
+```
+Backend Container
+├── FastAPI Application (ASGI)
+├── IFC Processing (IfcOpenShell)
+├── MongoDB Integration (PyMongo)
+├── Static File Serving (/ifc endpoint)
+├── CORS Middleware
+└── Automatic OpenAPI Documentation
+```
 
-If you prefer not to use Docker, you can run the frontend and backend separately.
+**Key Components:**
+- **FastAPI**: High-performance async Python framework
+- **IfcOpenShell**: Industry-standard IFC file processing
+- **MongoDB**: Document database for hierarchical IFC data
+- **Uvicorn**: Production-ready ASGI server
+
+### Frontend Architecture (React + 3D)
+```
+Frontend Container
+├── React 19 (Concurrent Features)
+├── ThatOpen Components (BIM Viewer)
+├── Three.js (3D Rendering Engine)
+├── Tailwind CSS (Utility-First Styling)
+├── React Router (SPA Navigation)
+└── Vite (Lightning-Fast Build Tool)
+```
+
+**Key Components:**
+- **ThatOpen Components**: Specialized BIM/IFC 3D viewer
+- **Three.js**: WebGL-based 3D rendering
+- **React 19**: Latest React with improved performance
+- **Vite**: Fast development with HMR
+
+---
+
+## Development Setup
+
+### Development Workflow
+```bash
+# Start services in background
+docker-compose up -d
+
+# View logs for specific service
+docker-compose logs -f backend   # Backend logs
+docker-compose logs -f frontend  # Frontend logs
+docker-compose logs -f mongo     # Database logs
+
+# Rebuild after major changes
+docker-compose up --build
+
+# Stop all services
+docker-compose down
+
+# Complete cleanup (removes volumes/images)
+docker-compose down --rmi all --volumes
+```
+
+### Environment Variables
+
+#### Backend Environment
+```yaml
+PYTHONPATH: /app                    # Python module resolution
+MONGO_URI: mongodb://mongo:27017    # Database connection
+```
+
+#### Frontend Environment
+```yaml
+VITE_API_URL: http://localhost:8000  # API endpoint
+NODE_ENV: development                # Development mode
+```
+
+---
+
+## Manual Installation
+
+<details>
+<summary>Click to expand manual setup instructions</summary>
 
 ### Backend Setup
 
-1. **Navigate to the backend directory**
+1. **Navigate to backend directory**
    ```bash
    cd backend
    ```
 
-2. **Create a Python virtual environment**
+2. **Create virtual environment**
    ```bash
    # Windows
    python -m venv venv
-   
-   # macOS/Linux
-   python3 -m venv venv
-   ```
-
-3. **Activate the virtual environment**
-   ```bash
-   # Windows
    venv\Scripts\activate
    
    # macOS/Linux
+   python3 -m venv venv
    source venv/bin/activate
    ```
 
-4. **Install dependencies**
+3. **Install dependencies**
    ```bash
    pip install -r requirements.txt
    ```
 
-5. **Run the FastAPI server**
+4. **Start MongoDB** (separate installation required)
+   ```bash
+   # Install MongoDB Community Edition
+   # Start MongoDB service
+   ```
+
+5. **Run FastAPI server**
    ```bash
    uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
    ```
 
-6. **Verify the backend is running**
-   - Open [http://localhost:8000](http://localhost:8000) in your browser
-   - You should see the FastAPI documentation
-
 ### Frontend Setup
 
-1. **Open a new terminal and navigate to the frontend directory**
+1. **Navigate to frontend directory**
    ```bash
    cd frontend
    ```
@@ -121,42 +202,162 @@ If you prefer not to use Docker, you can run the frontend and backend separately
    npm install
    ```
 
-3. **Start the development server**
+3. **Start development server**
    ```bash
    npm run dev
    ```
 
-4. **Access the frontend application**
-   - Open [http://localhost:5173](http://localhost:5173) in your browser
+</details>
+
+---
 
 ## Project Structure
 
 ```
 LeanCon-assignment/
-├── backend/                # FastAPI backend
-│   ├── app/                # Application code
-│   │   ├── api/            # API routes
-│   │   ├── core/           # Core configuration
-│   │   ├── services/       # Business logic
-│   │   └── main.py         # Entry point
-│   ├── data/               # Data files
-│   ├── ifc/                # IFC model files
-│   └── requirements.txt    # Python dependencies
-├── frontend/              # React frontend
-│   ├── public/             # Static assets
-│   ├── src/                # Source code
-│   │   ├── components/     # React components
-│   │   ├── services/       # API services
-│   │   └── App.jsx         # Main application
-│   ├── package.json        # Node.js dependencies
-│   └── vite.config.js      # Vite configuration
-└── docker-compose.yml     # Docker configuration
+├── docker-compose.yml          # Docker orchestration
+├── README.md                   # This file
+│
+├── backend/                    # FastAPI Backend
+│   ├── Dockerfile             # Backend container config
+│   ├── requirements.txt       # Python dependencies
+│   ├── app/                   # Application code
+│   │   ├── main.py            # FastAPI entry point
+│   │   ├── api/               # API routes
+│   │   ├── core/              # Configuration
+│   │   └── services/          # Business logic
+│   └── ifc/                   # IFC model files
+│
+└── frontend/                   # React Frontend
+    ├── Dockerfile             # Frontend container config
+    ├── package.json           # Node.js dependencies
+    ├── public/                # Static assets
+    └── src/                   # Source code
+        ├── App.jsx            # Main application
+        ├── components/        # React components
+        ├── pages/             # Application pages
+        ├── services/          # API services
+        └── styles/            # CSS styles
 ```
+
+---
 
 ## Features
 
-- 3D visualization of IFC models
-- Detailed element information display
-- Element quantity analysis with volume and length measurements
-- Dynamic level-based filtering
-- Interactive element selection and highlighting
+### Core BIM Features
+- **IFC Model Upload** - Support for standard IFC file formats
+- **Interactive 3D Viewer** - Smooth navigation and manipulation
+- **Element Highlighting** - Click table rows to highlight 3D elements
+- **Floor Level Filtering** - View specific building levels
+- **Quantity Analysis** - Volume and length measurements per element
+- **Multi-Model Support** - Switch between multiple IFC models
+
+### Advanced Features
+- **Smart Camera Positioning** - Automatic optimal viewpoint calculation
+- **Fragment Management** - Efficient rendering of large IFC models
+- **Loading States** - Progress indicators during model processing
+- **Error Handling** - Robust initialization and state management
+- **Hot Reloading** - Instant development feedback
+
+---
+
+## Technology Stack
+
+### Backend Technologies
+| Technology | Version | Purpose |
+|------------|---------|----------|
+| **Python** | 3.11 | Runtime environment |
+| **FastAPI** | 0.116.1 | Web framework |
+| **IfcOpenShell** | 0.8.3 | IFC file processing |
+| **MongoDB** | Latest | Document database |
+| **PyMongo** | 4.13.2 | MongoDB driver |
+| **Uvicorn** | 0.35.0 | ASGI server |
+
+### Frontend Technologies
+| Technology | Version | Purpose |
+|------------|---------|----------|
+| **React** | 19.1.0 | UI framework |
+| **Vite** | 7.0.4 | Build tool |
+| **ThatOpen Components** | 3.1.0 | BIM viewer |
+| **Three.js** | 0.178.0 | 3D rendering |
+| **Tailwind CSS** | 4.1.11 | Styling |
+| **React Router** | 7.7.0 | Navigation |
+
+### Infrastructure
+| Technology | Purpose |
+|------------|----------|
+| **Docker** | Containerization |
+| **Docker Compose** | Service orchestration |
+| **MongoDB** | Data persistence |
+| **CORS** | Cross-origin requests |
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+#### Docker Issues
+```bash
+# Ensure Docker Desktop is running
+# Check Docker status
+docker --version
+docker-compose --version
+
+# Force complete rebuild
+docker-compose down --rmi all --volumes
+docker-compose up --build
+
+# Check service logs
+docker-compose logs [service-name]
+```
+
+#### Port Conflicts
+```bash
+# Check if ports are in use
+netstat -an | findstr :5173  # Windows
+lsof -i :5173               # macOS/Linux
+
+# Kill processes using ports
+# Windows: Use Task Manager
+# macOS/Linux: kill -9 $(lsof -t -i:5173)
+```
+
+#### Cache Issues
+```bash
+# Clear Docker build cache
+docker system prune -a
+
+# Clear npm cache (if running manually)
+npm cache clean --force
+```
+
+### Getting Help
+
+1. **Check the logs**: `docker-compose logs`
+2. **Verify all services are running**: `docker-compose ps`
+3. **Test API connectivity**: Visit `http://localhost:8000/docs`
+4. **Check frontend build**: Visit `http://localhost:5173`
+
+---
+
+## Contributing
+
+This project uses a modern development stack with Docker for consistency across environments. The architecture supports:
+
+- **Hot reloading** for fast development
+- **Easy testing** with isolated services
+- **Horizontal scaling** capabilities
+- **Production deployment** readiness
+
+---
+
+## License
+
+This project is part of the LeanCon assignment and follows the specified requirements for IFC model visualization and analysis.
+
+---
+
+<div align="center">
+  <strong>Built with ❤️ for the AEC industry</strong>
+</div>
