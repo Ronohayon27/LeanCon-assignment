@@ -8,6 +8,7 @@
 [![MongoDB](https://img.shields.io/badge/MongoDB-Database-green?logo=mongodb)](https://www.mongodb.com/)
 
 ## Table of Contents
+
 - [Quick Start](#-quick-start)
 - [Docker Architecture](#-docker-architecture)
 - [Application Architecture](#-application-architecture)
@@ -21,13 +22,15 @@
 ## Quick Start
 
 ### Prerequisites
+
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
 - Git installed
 
 ### One-Command Setup
+
 ```bash
 # Clone the repository
-git clone <your-repository-url>
+git clone https://github.com/Ronohayon27/LeanCon-assignment.git
 cd LeanCon-assignment
 
 # Build and start all services
@@ -35,6 +38,7 @@ docker-compose up --build
 ```
 
 ### Access Points
+
 - Frontend: [http://localhost:5173](http://localhost:5173)
 - Backend API: [http://localhost:8000](http://localhost:8000)
 - API Documentation: [http://localhost:8000/docs](http://localhost:8000/docs)
@@ -52,23 +56,24 @@ graph TB
         B[Backend Container<br/>FastAPI + Python<br/>Port: 8000]
         M[MongoDB Container<br/>Database<br/>Port: 27017]
     end
-    
+
     F --> B
     B --> M
-    
+
     U[User Browser] --> F
     F --> U
 ```
 
 ### Service Configuration
 
-| Service | Technology | Port | Purpose |
-|---------|------------|------|----------|
-| **Frontend** | React 19 + Vite | 5173 | 3D IFC model visualization |
-| **Backend** | FastAPI + Python 3.11 | 8000 | IFC processing & REST API |
-| **Database** | MongoDB | 27017 | IFC data storage |
+| Service      | Technology            | Port  | Purpose                    |
+| ------------ | --------------------- | ----- | -------------------------- |
+| **Frontend** | React 19 + Vite       | 5173  | 3D IFC model visualization |
+| **Backend**  | FastAPI + Python 3.11 | 8000  | IFC processing & REST API  |
+| **Database** | MongoDB               | 27017 | IFC data storage           |
 
 ### Volume Mounts (Development)
+
 - **Hot Reloading**: Code changes reflect instantly without rebuilding
 - **Persistent Data**: MongoDB data survives container restarts
 - **Node Modules**: Optimized dependency management
@@ -78,6 +83,7 @@ graph TB
 ## Application Architecture
 
 ### Backend Architecture (FastAPI)
+
 ```
 Backend Container
 ├── FastAPI Application (ASGI)
@@ -89,12 +95,14 @@ Backend Container
 ```
 
 **Key Components:**
+
 - **FastAPI**: High-performance async Python framework
 - **IfcOpenShell**: Industry-standard IFC file processing
 - **MongoDB**: Document database for hierarchical IFC data
 - **Uvicorn**: Production-ready ASGI server
 
 ### Frontend Architecture (React + 3D)
+
 ```
 Frontend Container
 ├── React 19 (Concurrent Features)
@@ -106,6 +114,7 @@ Frontend Container
 ```
 
 **Key Components:**
+
 - **ThatOpen Components**: Specialized BIM/IFC 3D viewer
 - **Three.js**: WebGL-based 3D rendering
 - **React 19**: Latest React with improved performance
@@ -116,6 +125,7 @@ Frontend Container
 ## Development Setup
 
 ### Development Workflow
+
 ```bash
 # Start services in background
 docker-compose up -d
@@ -138,78 +148,18 @@ docker-compose down --rmi all --volumes
 ### Environment Variables
 
 #### Backend Environment
+
 ```yaml
-PYTHONPATH: /app                    # Python module resolution
-MONGO_URI: mongodb://mongo:27017    # Database connection
+PYTHONPATH: /app # Python module resolution
+MONGO_URI: mongodb://mongo:27017 # Database connection
 ```
 
 #### Frontend Environment
+
 ```yaml
-VITE_API_URL: http://localhost:8000  # API endpoint
-NODE_ENV: development                # Development mode
+VITE_API_URL: http://localhost:8000 # API endpoint
+NODE_ENV: development # Development mode
 ```
-
----
-
-## Manual Installation
-
-<details>
-<summary>Click to expand manual setup instructions</summary>
-
-### Backend Setup
-
-1. **Navigate to backend directory**
-   ```bash
-   cd backend
-   ```
-
-2. **Create virtual environment**
-   ```bash
-   # Windows
-   python -m venv venv
-   venv\Scripts\activate
-   
-   # macOS/Linux
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
-
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Start MongoDB** (separate installation required)
-   ```bash
-   # Install MongoDB Community Edition
-   # Start MongoDB service
-   ```
-
-5. **Run FastAPI server**
-   ```bash
-   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-   ```
-
-### Frontend Setup
-
-1. **Navigate to frontend directory**
-   ```bash
-   cd frontend
-   ```
-
-2. **Install Node.js dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Start development server**
-   ```bash
-   npm run dev
-   ```
-
-</details>
-
----
 
 ## Project Structure
 
@@ -235,9 +185,11 @@ LeanCon-assignment/
     └── src/                   # Source code
         ├── App.jsx            # Main application
         ├── components/        # React components
+        ├── contexts/          # React contexts for state management
+        ├── hooks/             # Custom React hooks
+        ├── layouts/           # Page layout components
         ├── pages/             # Application pages
         ├── services/          # API services
-        └── styles/            # CSS styles
 ```
 
 ---
@@ -245,6 +197,7 @@ LeanCon-assignment/
 ## Features
 
 ### Core BIM Features
+
 - **IFC Model Upload** - Support for standard IFC file formats
 - **Interactive 3D Viewer** - Smooth navigation and manipulation
 - **Element Highlighting** - Click table rows to highlight 3D elements
@@ -253,7 +206,7 @@ LeanCon-assignment/
 - **Multi-Model Support** - Switch between multiple IFC models
 
 ### Advanced Features
-- **Smart Camera Positioning** - Automatic optimal viewpoint calculation
+
 - **Fragment Management** - Efficient rendering of large IFC models
 - **Loading States** - Progress indicators during model processing
 - **Error Handling** - Robust initialization and state management
@@ -264,32 +217,35 @@ LeanCon-assignment/
 ## Technology Stack
 
 ### Backend Technologies
-| Technology | Version | Purpose |
-|------------|---------|----------|
-| **Python** | 3.11 | Runtime environment |
-| **FastAPI** | 0.116.1 | Web framework |
-| **IfcOpenShell** | 0.8.3 | IFC file processing |
-| **MongoDB** | Latest | Document database |
-| **PyMongo** | 4.13.2 | MongoDB driver |
-| **Uvicorn** | 0.35.0 | ASGI server |
+
+| Technology       | Version | Purpose             |
+| ---------------- | ------- | ------------------- |
+| **Python**       | 3.11    | Runtime environment |
+| **FastAPI**      | 0.116.1 | Web framework       |
+| **IfcOpenShell** | 0.8.3   | IFC file processing |
+| **MongoDB**      | Latest  | Document database   |
+| **PyMongo**      | 4.13.2  | MongoDB driver      |
+| **Uvicorn**      | 0.35.0  | ASGI server         |
 
 ### Frontend Technologies
-| Technology | Version | Purpose |
-|------------|---------|----------|
-| **React** | 19.1.0 | UI framework |
-| **Vite** | 7.0.4 | Build tool |
-| **ThatOpen Components** | 3.1.0 | BIM viewer |
-| **Three.js** | 0.178.0 | 3D rendering |
-| **Tailwind CSS** | 4.1.11 | Styling |
-| **React Router** | 7.7.0 | Navigation |
+
+| Technology              | Version | Purpose      |
+| ----------------------- | ------- | ------------ |
+| **React**               | 19.1.0  | UI framework |
+| **Vite**                | 7.0.4   | Build tool   |
+| **ThatOpen Components** | 3.1.0   | BIM viewer   |
+| **Three.js**            | 0.178.0 | 3D rendering |
+| **Tailwind CSS**        | 4.1.11  | Styling      |
+| **React Router**        | 7.7.0   | Navigation   |
 
 ### Infrastructure
-| Technology | Purpose |
-|------------|----------|
-| **Docker** | Containerization |
+
+| Technology         | Purpose               |
+| ------------------ | --------------------- |
+| **Docker**         | Containerization      |
 | **Docker Compose** | Service orchestration |
-| **MongoDB** | Data persistence |
-| **CORS** | Cross-origin requests |
+| **MongoDB**        | Data persistence      |
+| **CORS**           | Cross-origin requests |
 
 ---
 
@@ -298,6 +254,7 @@ LeanCon-assignment/
 ### Common Issues
 
 #### Docker Issues
+
 ```bash
 # Ensure Docker Desktop is running
 # Check Docker status
@@ -313,6 +270,7 @@ docker-compose logs [service-name]
 ```
 
 #### Port Conflicts
+
 ```bash
 # Check if ports are in use
 netstat -an | findstr :5173  # Windows
@@ -324,6 +282,7 @@ lsof -i :5173               # macOS/Linux
 ```
 
 #### Cache Issues
+
 ```bash
 # Clear Docker build cache
 docker system prune -a
@@ -354,10 +313,4 @@ This project uses a modern development stack with Docker for consistency across 
 
 ## License
 
-This project is part of the LeanCon assignment and follows the specified requirements for IFC model visualization and analysis.
-
----
-
-<div align="center">
-  <strong>Built with ❤️ for the AEC industry</strong>
-</div>
+## This project follows the specified requirements for IFC model visualization and analysis.
