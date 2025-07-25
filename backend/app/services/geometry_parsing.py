@@ -38,6 +38,7 @@ def get_element_level_with_fallback(element, ifc_file):
                     if structure.is_a('IfcBuildingStorey'):
                         level_name = structure.Name
                         if level_name:
+                            print("fount the name in method 1", level_name)
                             return level_name
                         return f"Level_{structure.GlobalId[:8]}"
         
@@ -48,6 +49,7 @@ def get_element_level_with_fallback(element, ifc_file):
                 if structure.is_a('IfcBuildingStorey'):
                     level_name = structure.Name
                     if level_name:
+                        print("fount the name in method 2", level_name)
                         return level_name
                     return f"Level_{structure.GlobalId[:8]}"
         
@@ -62,15 +64,17 @@ def get_element_level_with_fallback(element, ifc_file):
                                 # Look for Reference Level property specifically
                                 if prop.Name and 'reference level' in prop.Name.lower():
                                     if prop.NominalValue:
+                                        print("fount the name in method 3 with refrences level",str(prop.NominalValue.wrappedValue))
                                         return str(prop.NominalValue.wrappedValue)
                                 # Look for Work Plane property as fallback
                                 elif prop.Name and 'work plane' in prop.Name.lower():
                                     if prop.NominalValue:
+                                        print("fount the name in method 3 with work plane",str(prop.NominalValue.wrappedValue))
                                         return str(prop.NominalValue.wrappedValue)
         except:
             pass
         
-        # Method 4: Try to infer level from element placement Z-coordinate
+        # Method 4: Try to infer level from element placement Z-coordinate, only if there isnt a specific level yet
         try:
             if hasattr(element, 'ObjectPlacement') and element.ObjectPlacement:
                 placement = element.ObjectPlacement
@@ -144,24 +148,27 @@ def extract_element_quantities(element):
     
     return quantities
 
-def parse_geometry_data():
+def parse_geometry_data(file_path):
     """
     Parse IFC file and extract aggregated geometry data with normalized names
     
+    Args:
+        file_path (str): Path to the IFC file to parse
+        
     Returns:
         dict: Aggregated data with normalized element names
     """
     
     # Open the IFC file
     try:
-        ifc_file = ifcopenshell.open("../../ifc/simple_example.ifc")
+        ifc_file = ifcopenshell.open(file_path)
     except Exception as e:
         print(f"Error opening IFC file: {e}")
         return {"error": str(e)}
     
     print(f"IFC Schema: {ifc_file.schema}")
     
-    # Define element types to extract (focusing on geometric elements)
+    # Define element types to extract, focusing on geometric elements only
     element_types = [
         'IfcWall', 'IfcWallStandardCase',
         'IfcSlab', 'IfcSlabStandardCase', 'IfcSlabElementedCase',
@@ -192,7 +199,6 @@ def parse_geometry_data():
     total_processed = 0
     
     print("Processing elements...")
-    
     for element_type in element_types:
         try:
             elements = ifc_file.by_type(element_type)
@@ -312,60 +318,3 @@ def save_parsed_data(data, output_file_path):
     except Exception as e:
         print(f"Error saving file: {e}")
 
-# Example usage
-if __name__ == "__main__":
-    print("Parsing IFC geometry data with aggregation...")
-    
-    # Parse the geometry data
-    parsed_data = parse_geometry_data()
-    
-    if "error" in parsed_data:
-        print(f"Error: {parsed_data['error']}")
-        exit(1)
-    
-    # Print summary
-    print(f"\n=== PARSING SUMMARY ===")
-    print(f"Total processed elements: {parsed_data['metadata']['total_processed_elements']}")
-    print(f"Total aggregated groups: {parsed_data['metadata']['total_aggregated_groups']}")
-    print(f"IFC Schema: {parsed_data['metadata']['ifc_schema']}")
-    print(f"\n=== DETECTED LEVELS ===")
-    for i, level in enumerate(parsed_data['metadata']['all_levels']):
-        print(f"  {i+1}. {level}")
-    
-    # Print element type breakdown
-    type_counts = defaultdict(int)
-    for element in parsed_data["data"]:
-        type_counts[element["type"]] += 1
-    
-    print(f"\n=== ELEMENT TYPES ===")
-    for elem_type, count in sorted(type_counts.items()):
-        print(f"  {elem_type}: {count} groups")
-    
-    # Print sample elements
-    print(f"\n=== SAMPLE AGGREGATED ELEMENTS ===")
-    for i, element in enumerate(parsed_data["data"][:10]):
-        print(f"{i+1}. {element['name']} ({element['type']})")
-        print(f"   Total: {element['total']} elements")
-        
-        # Display levels with counts
-        levels_info = []
-        total_express_ids = 0
-        for level_name, level_data in element['levels'].items():
-            levels_info.append(f"{level_name}: {level_data['count']} elements")
-            total_express_ids += len(level_data['expressIds'])
-        print(f"   Levels: {', '.join(levels_info)}")
-        
-        if element['volume'] > 0:
-            print(f"   Volume: {element['volume']} m³")
-        if element['area'] > 0:
-            print(f"   Area: {element['area']} m²")
-        if element['length'] > 0:
-            print(f"   Length: {element['length']} m")
-        print(f"   Total Express IDs: {total_express_ids}")
-        print()
-    
-    # Save the parsed data
-    save_parsed_data(parsed_data, "parsed_geometry_data.json")
-    
-    print("Geometry parsing complete!")
-    print("File saved: parsed_geometry_data.json")
