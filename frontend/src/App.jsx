@@ -1,13 +1,22 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import ModelsPage from "./pages/ModelsPage";
 import LandingPage from "./pages/LandingPage";
+import ModelsEntryPage from "./pages/ModelsPages/index";
+import ModelsLayout from "./layouts/ModelsLayout";
+import ModelViewerPage from "./pages/ModelsPages/ModelViewerPage ";
 
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/models" element={<ModelsPage />} />
+
+        {/* Entry point — decides where to go */}
+        <Route path="/models" element={<ModelsEntryPage />} />
+
+        {/* Viewer screen for specific model */}
+        <Route path="/models/:id" element={<ModelsLayout />}>
+          <Route index element={<ModelViewerPage />} />
+        </Route>
       </Routes>
     </Router>
   );

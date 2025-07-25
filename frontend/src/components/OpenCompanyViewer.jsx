@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import * as BUI from "@thatopen/ui";
+import { useEffect, useRef, useState } from "react";
 import * as OBC from "@thatopen/components";
 import * as OBF from "@thatopen/components-front";
 import * as THREE from "three";
@@ -12,16 +11,34 @@ export default function IfcViewer({ selectedElementIds = [], modelPath }) {
   const componentsRef = useRef(null);
   const modelRef = useRef(null); // Reference to store the loaded model
   const highlighterRef = useRef(null); // Reference to store the highlighter
+  const [isInitialized, setIsInitialized] = useState(false); // Track initialization state
+  const [isModelLoading, setIsModelLoading] = useState(true); // Track model loading state
+  const [loadingProgress, setLoadingProgress] = useState(0); // Track loading progress
 
   // Effect for initial setup
   useEffect(() => {
+    // Reset initialization state when model path changes
+    setIsInitialized(false);
+    setIsModelLoading(true);
+    setLoadingProgress(0);
+
     const init = async () => {
       const container = containerRef.current;
       if (!container) return;
 
+      // Clean up previous instance if it exists
+      if (componentsRef.current) {
+        try {
+          componentsRef.current.dispose();
+        } catch (error) {
+          console.warn("Error during cleanup:", error);
+        }
+      }
+
       const components = new OBC.Components();
       // Store components reference
       componentsRef.current = components;
+      viewerRef.current = { components };
 
       const worlds = components.get(OBC.Worlds);
       const world = worlds.create();
@@ -39,7 +56,7 @@ export default function IfcViewer({ selectedElementIds = [], modelPath }) {
       // Set up the highlighter
       components.get(OBC.Raycasters).get(world);
       const highlighter = components.get(OBF.Highlighter);
-      await highlighter.setup({
+      highlighter.setup({
         world,
         selectMaterialDefinition: {
           color: new THREE.Color("#ff0000"), // Red color for highlighting
@@ -49,69 +66,36 @@ export default function IfcViewer({ selectedElementIds = [], modelPath }) {
         },
       });
 
+      // Store highlighter reference for later use
+      highlighterRef.current = highlighter;
+
       // Add event listeners to capture element IDs when clicking on the model
       highlighter.events.select.onHighlight.add(async (modelIdMap) => {
-        console.log("=== ELEMENT CLICKED IN 3D MODEL ===");
-        console.log("Selected modelIdMap:", modelIdMap);
-
         // Get the fragments manager
         const fragmentsManager = components.get(OBC.FragmentsManager);
 
         // Get detailed information about the selected elements
         for (const [modelId, localIds] of Object.entries(modelIdMap)) {
-          console.log(`Model ID: ${modelId}, Local IDs:`, localIds);
           const model = fragmentsManager.list.get(modelId);
           if (!model) {
-            console.log(`Model ${modelId} not found`);
             continue;
           }
 
-          // Log model information
-          console.log(`Model found:`, {
-            id: model.id,
-            hasItems: !!model.items,
-            itemsSize: model.items?.size,
-            hasGetItemsData: typeof model.getItemsData === "function",
-          });
-
           // Try different ways to get element data
           for (const localId of localIds) {
-            console.log(`\n--- Analyzing Local ID: ${localId} ---`);
-
-            // Method 1: Try getItemsData
+            // getItemsData for highlight
             try {
               if (model.getItemsData) {
-                const itemData = await model.getItemsData([localId]);
-                console.log(`getItemsData result:`, itemData);
+                await model.getItemsData([localId]);
               }
             } catch (e) {
-              console.log(`getItemsData failed:`, e.message);
+              console.log(e);
             }
-
-            // Method 2: Check if localId exists in model.items
-            if (model.items) {
-              console.log(
-                `Checking if localId ${localId} exists in model.items:`,
-                model.items.has(localId)
-              );
-              if (model.items.has(localId)) {
-                const itemInfo = model.items.get(localId);
-                console.log(`Item info from model.items:`, itemInfo);
-              }
-            }
-
-            // Method 3: Assume localId IS the expressID
-            console.log(`Assuming localId ${localId} is the expressID`);
-            console.log(
-              `This means when we get expressID ${localId} from backend, we should use localId ${localId} for highlighting`
-            );
           }
         }
       });
 
-      highlighter.events.select.onClear.add(() => {
-        console.log("Selection was cleared");
-      });
+      highlighter.events.select.onClear.add(() => {});
 
       // Store references
       highlighterRef.current = highlighter;
@@ -122,8 +106,9 @@ export default function IfcViewer({ selectedElementIds = [], modelPath }) {
       const grid = grids.create(world);
       grid.three.position.set(0, 0, 0); // Set XYZ position
       grid.three.updateMatrixWorld(true);
-      grid.three.visible = true;
+      grid.three.visible = false;
 
+      // Set up IFC loader first
       const ifcLoader = components.get(OBC.IfcLoader);
       await ifcLoader.setup({
         autoSetWasm: false,
@@ -133,6 +118,7 @@ export default function IfcViewer({ selectedElementIds = [], modelPath }) {
         },
       });
 
+      // Initialize fragments manager AFTER IFC loader setup
       const githubUrl =
         "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
       const fetchedUrl = await fetch(githubUrl);
@@ -141,90 +127,112 @@ export default function IfcViewer({ selectedElementIds = [], modelPath }) {
         type: "text/javascript",
       });
       const workerUrl = URL.createObjectURL(workerFile);
+
       const fragments = components.get(OBC.FragmentsManager);
-      fragments.init(workerUrl);
 
-      world.camera.controls.addEventListener("rest", () =>
-        fragments.core.update(true)
-      );
+      await fragments.init(workerUrl);
 
-      // Ensures that once the Fragments model is loaded
-      // (converted from the IFC in this case),
-      // it utilizes the world camera for updates
-      // and is added to the scene.
+      // Mark as initialized after fragments manager is ready
+      setIsInitialized(true);
+
+      // Set up event listeners for when models are loaded
       fragments.list.onItemSet.add(async ({ value: model }) => {
         model.useCamera(world.camera.three);
         world.scene.three.add(model.object);
-        fragments.core.update(true);
 
         // Store model reference for highlighting
         modelRef.current = model;
-        console.log("Model reference stored:", model);
 
-        // Debug coordinate system and find correct entry level position
-        console.log("🔍 Debugging model coordinate system...");
+        // Force multiple fragment updates to ensure full rendering
 
-        // Get model bounding box for reference
-        const box = new THREE.Box3().setFromObject(model.object);
-        console.log("Model bounding box:", {
-          min: { x: box.min.x, y: box.min.y, z: box.min.z },
-          max: { x: box.max.x, y: box.max.y, z: box.max.z },
-          size: {
-            x: box.max.x - box.min.x,
-            y: box.max.y - box.min.y,
-            z: box.max.z - box.min.z,
-          },
+        // Initial update
+        fragments.core.update(true);
+
+        // Force scene update
+        world.scene.three.updateMatrixWorld(true);
+
+        // Add camera event listeners to maintain fragment updates
+        world.camera.controls.addEventListener("rest", () => {
+          if (fragments && fragments.core) {
+            fragments.core.update(true);
+          }
         });
 
-        // Based on your IFC data:
-        // Entry Level: 0.0 mm = 0.0 m
-        // 02 - Floor: 3800 mm = 3.8 m
-        // If grid at Y=0 appears at 02 - Floor, then entry level is likely at Y = -3.8
-
-        // Try positioning grid at different Y levels to find entry level
-        const possibleEntryLevelY = -2.5; // Negative of the 02 - Floor elevation
-
-        grid.three.position.set(0, possibleEntryLevelY, 0);
-        grid.three.visible = true;
-        console.log(
-          `✅ Grid positioned at Y = ${possibleEntryLevelY} (attempting to match entry level)`
-        );
-
-        // Also log some reference points for debugging
-        console.log("📊 IFC Elevation Reference:");
-        console.log("  Entry Level (IFC): 0.0 mm = 0.0 m");
-        console.log("  02 - Floor (IFC): 3800 mm = 3.8 m");
-        console.log(
-          "  If grid at Y=0 shows 02 - Floor, then entry level is at Y = -3.8"
-        );
+        world.camera.controls.addEventListener("change", () => {
+          if (fragments && fragments.core) {
+            // Throttle updates during movement
+            if (!world.camera.controls._updating) {
+              world.camera.controls._updating = true;
+              setTimeout(() => {
+                fragments.core.update(false); // Lighter update during movement
+                world.camera.controls._updating = false;
+              }, 50);
+            }
+          }
+        });
+        setIsModelLoading(false);
       });
 
-      // Load the IFC file
-      await loadIfc(modelPath, ifcLoader);
+      // Try to load the IFC file - with proper error handling
+      try {
+        await loadIfc(modelPath, ifcLoader, fragments);
+      } catch (error) {
+        console.error(error);
+
+        setIsModelLoading(false);
+      }
+
+      // Initialization is now marked earlier after fragments manager is ready
     };
 
     init();
+
+    // Cleanup function when component unmounts or modelPath changes
+    return () => {
+      if (componentsRef.current) {
+        try {
+          componentsRef.current.dispose();
+          componentsRef.current = null;
+          viewerRef.current = null;
+          highlighterRef.current = null;
+          setIsInitialized(false);
+          setIsModelLoading(true);
+          setLoadingProgress(0);
+        } catch (error) {
+          console.warn("Error during cleanup:", error);
+        }
+      }
+    };
   }, [modelPath]); // Re-initialize when model path changes
 
-  // Effect for highlighting elements when selectedElementIds changes
+  // Effect for highlighting elements
   useEffect(() => {
+    // Skip if not initialized or no elements to highlight
+    if (
+      !isInitialized ||
+      !componentsRef.current ||
+      !viewerRef.current ||
+      !highlighterRef.current
+    ) {
+      return;
+    }
+
     const highlightElements = async () => {
-      if (!highlighterRef.current || !viewerRef.current) {
-        console.log("Highlighter or viewer not ready");
-        return;
-      }
-
-      const highlighter = highlighterRef.current;
-      const { components } = viewerRef.current;
-      const fragments = components.get(OBC.FragmentsManager);
-
       try {
+        const highlighter = highlighterRef.current;
+        const { components } = viewerRef.current;
+
+        // Check if fragments manager exists and is initialized
+        const fragments = components.get(OBC.FragmentsManager);
+        if (!fragments || !fragments.list) {
+          return;
+        }
+
         // Clear any previous highlights
         await highlighter.clear("select");
 
         // If no elements selected, just return after clearing
         if (selectedElementIds.length === 0) {
-          console.log("No elements to highlight");
           return;
         }
 
@@ -233,19 +241,10 @@ export default function IfcViewer({ selectedElementIds = [], modelPath }) {
           typeof id === "string" ? parseInt(id) : id
         );
 
-        console.log("Highlighting elements with IDs:", expressIds);
-
-        // Based on our analysis, it seems express IDs from backend = local IDs in 3D model
-        // Let's use a direct mapping approach
-        console.log("Using direct mapping: express IDs = local IDs");
-
         const modelIdMap = {};
 
         // Get all fragment models and try to map express IDs directly
         for (const [modelId] of fragments.list) {
-          console.log(`Checking model ${modelId} for express IDs:`, expressIds);
-
-          // Since we observed that local IDs seem to be the same as express IDs,
           // let's try direct mapping first
           if (!modelIdMap[modelId]) {
             modelIdMap[modelId] = new Set();
@@ -254,59 +253,94 @@ export default function IfcViewer({ selectedElementIds = [], modelPath }) {
           // Add all express IDs as local IDs for this model
           expressIds.forEach((expressId) => {
             modelIdMap[modelId].add(expressId);
-            console.log(
-              `Added express ID ${expressId} as local ID for model ${modelId}`
-            );
           });
         }
-
-        console.log("Direct mapping model ID map:", modelIdMap);
 
         // Try to highlight using the direct mapping
         if (Object.keys(modelIdMap).length > 0) {
           try {
             await highlighter.highlightByID("select", modelIdMap, true);
-            console.log(
-              "Successfully highlighted elements using direct mapping!"
-            );
           } catch (error) {
-            console.error("Direct mapping failed:", error);
-
-            // If direct mapping fails, try with just the main model
-            console.log("Trying with main model only...");
-            const simpleMap = {
-              "ifc-model": new Set(expressIds),
-            };
-
-            console.log("Simple mapping:", simpleMap);
-            await highlighter.highlightByID("select", simpleMap, true);
-            console.log("Simple mapping highlighting completed");
+            console.error(error);
           }
         }
       } catch (error) {
-        console.error("Error highlighting elements:", error);
+        console.error(error);
       }
     };
 
     highlightElements();
-  }, [selectedElementIds]);
+  }, [selectedElementIds, isInitialized]);
 
   const loadIfc = async (path, ifcLoader) => {
     try {
       const file = await fetch(path);
+
+      if (!file.ok) {
+        throw new Error(
+          `Failed to fetch IFC file: ${file.status} ${file.statusText}`
+        );
+      }
+
       const data = await file.arrayBuffer();
       const buffer = new Uint8Array(data);
 
-      // Load the model with a simple name
-      await ifcLoader.load(buffer, false, "ifc-model", {
-        processData: {
-          progressCallback: (progress) => console.log(progress),
-        },
-      });
+      try {
+        await ifcLoader.load(buffer, false, "ifc-model", {
+          processData: {
+            progressCallback: (progress) => {
+              setLoadingProgress(progress);
+            },
+          },
+        });
+      } catch (loadError) {
+        // Suppress the "fragments not initialized" error if it contains this message
+        // but still allow the loading to continue since it works anyway
+        if (
+          loadError.message &&
+          loadError.message.includes("initialize fragments")
+        ) {
+          // Don't throw the error, just log it and continue
+        } else {
+          // For other errors, still throw them
+          throw loadError;
+        }
+      }
     } catch (error) {
-      console.error("❌ Error loading IFC model:", error);
+      // Only log and stop loading for actual critical errors
+      if (!error.message || !error.message.includes("initialize fragments")) {
+        setIsModelLoading(false);
+        throw error;
+      }
     }
   };
 
-  return <div ref={containerRef} style={{ width: "100%", height: "100vh" }} />;
+  return (
+    <div className="relative w-full h-full bg-white">
+      <div ref={containerRef} className="absolute inset-0 z-0" />
+      {isModelLoading && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white bg-opacity-90">
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4" />
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                Loading IFC Model
+              </h3>
+              <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                <div
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+                  style={{ width: `${loadingProgress * 100}%` }}
+                />
+              </div>
+              <p className="text-sm text-gray-600">
+                {loadingProgress > 0
+                  ? `${Math.round(loadingProgress * 100)}%`
+                  : "Initializing..."}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

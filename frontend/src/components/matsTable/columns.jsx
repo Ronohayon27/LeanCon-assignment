@@ -40,11 +40,16 @@ const baseColumns = [
     header: () => "Quantity",
     cell: ({ row }) => {
       const volume = row.getValue("volume") || 0;
+      const area = row.original.area || 0;
       const length = row.original.length || 0;
 
       // If volume exists and is not zero, show volume with m³
       if (volume > 0) {
         return <div>{volume} m³</div>;
+      }
+      // If volume none exists and area exist, show area with m²
+      else if (area) {
+        return <div>{area} m²</div>;
       }
       // Otherwise, show length with m if it exists
       else if (length > 0) {

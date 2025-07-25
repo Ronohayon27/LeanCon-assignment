@@ -17,3 +17,7 @@ export function geometryRoute(){
     return `${apiUrl()}/geometry`
 }
 
+export function getIfcRoute(){
+  return `${apiUrl()}/ifc`
+}
+

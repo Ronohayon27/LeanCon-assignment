@@ -31,7 +31,7 @@ export function DataTable({ columns, data, onRowClick }) {
     },
   });
 
-  // 🧮 Sum up totals for numeric columns (volume, total, and levels)
+  //  Sum up totals for numeric columns (volume, total, and levels)
   const columnSums = {};
   columns.forEach((col) => {
     const key = col.accessorKey;

@@ -27,7 +27,7 @@ export default function LandingPage() {
           </p>
         </header>
 
-        <main className="bg-black/30 backdrop-blur-sm rounded-xl p-10 shadow-2xl border border-white/10">
+        <main className="bg-black/10 backdrop-blur-sm rounded-xl p-10 shadow-2xl border border-white/10">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-4xl font-bold text-white mb-6">
@@ -68,7 +68,7 @@ export default function LandingPage() {
               </Button>
             </div>
             <div className="hidden md:block">
-              <div className="p-3 bg-black/50 backdrop-blur-md rounded-lg border border-white/10 shadow-xl overflow-hidden transform transition-all hover:scale-[1.02] duration-500">
+              <div className="p-3 bg-white/20 backdrop-blur-md rounded-lg border border-white/10 shadow-xl overflow-hidden transform transition-all hover:scale-[1.02] duration-500">
                 <img
                   src="/img/bim-illustration.svg"
                   alt="BIM Illustration"

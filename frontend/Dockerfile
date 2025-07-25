@@ -11,7 +11,8 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install all deps (including dev) using clean install
-RUN npm ci --include=dev
+# Use npm install instead of npm ci to ensure binaries are properly linked
+RUN npm install
 
 # Copy the rest of the app
 COPY . .
