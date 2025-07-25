@@ -1,22 +1,35 @@
-import { Link } from "react-router-dom";
-import { Button } from "../../components/ui/button";
-import { ArrowRight, CheckCircle } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, CheckCircle, UploadCloud } from "lucide-react";
+import { useModels } from "@/hooks/useModels";
+import { useNavigate } from "react-router-dom";
+
+import UploadingModal from "@/components/UploadingModal";
 
 export default function LandingPage() {
+  const navigate = useNavigate();
+  const { models, setModels, loading } = useModels();
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const handleModelUploaded = (newModel) => {
+    setModels((prev) => [...prev, newModel]);
+  };
+
+  const hasModels = models.length > 0;
+
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* 🔽 Background image with dark overlay - Netflix style */}
+      {/* Background */}
       <div className="absolute inset-0 z-10">
         <img
           src="/img/leancon.webp"
           alt="LeanCon city background"
-          className="object-cover w-full h-full scale-100 fill-accent transform-gpu" /* Slightly zoomed out */
+          className="object-cover w-full h-full scale-100 fill-accent transform-gpu"
         />
-        {/* Darker overlay with gradient for Netflix-style effect */}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/10" />
       </div>
 
-      {/* 🔼 Main content - Netflix style */}
+      {/* Main Content */}
       <div className="relative z-10 max-w-5xl w-full text-white px-6">
         <header className="text-center mb-4">
           <h1 className="text-6xl font-bold mb-6 drop-shadow-xl tracking-tight">
@@ -56,17 +69,45 @@ export default function LandingPage() {
                   <span className="text-lg">Level-based element filtering</span>
                 </li>
               </ul>
-              <Button
-                asChild
-                size="lg"
-                className="bg-yellow-400 hover:bg-yellow-500 hover:text-black text-white text-lg py-6 px-8 rounded-md font-medium transition-all duration-300 shadow-lg"
-              >
-                <Link to="/models">
-                  View Your Models
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
+
+              {hasModels ? (
+                <>
+                  <Button
+                    size="lg"
+                    onClick={() =>
+                      navigate(`/models/${models[0].id || models[0]._id}`)
+                    }
+                    className="bg-white hover:bg-yellow-100 hover:text-black text-gray-700 text-lg py-6 px-8 rounded-md font-medium transition-all duration-300 shadow-lg"
+                  >
+                    View Your Models
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Button>
+                  <span className="mt-4 text-sm text-white/80 ml-4">
+                    You currently have {models.length} model
+                    {models.length > 1 ? "s" : ""}.
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Button
+                    size="lg"
+                    onClick={() => setModalOpen(true)}
+                    className="hover:bg-yellow-100! hover:text-black text-gray-700 text-lg py-6 px-8 rounded-md font-medium transition-all duration-300 shadow-lg"
+                  >
+                    <UploadCloud className="mr-2 h-5 w-5" />
+                    Upload Your First Model
+                  </Button>
+                </>
+              )}
+
+              <UploadingModal
+                open={modalOpen}
+                onOpenChange={setModalOpen}
+                onModelUploaded={handleModelUploaded}
+                modelsCount={models.length}
+              />
             </div>
+
             <div className="hidden md:block">
               <div className="p-3 bg-white/20 backdrop-blur-md rounded-lg border border-white/10 shadow-xl overflow-hidden transform transition-all hover:scale-[1.02] duration-500">
                 <img

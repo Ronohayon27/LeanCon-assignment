@@ -7,8 +7,8 @@ import { DataTable } from "@/components/matsTable/data-table";
 import IfcViewer from "@/components/OpenCompanyViewer";
 
 export default function ModelViewerPage() {
-  const { id } = useParams(); // from /models/:id
-  const { models } = useModels(); // from ModelsContext
+  const { id } = useParams();
+  const { models } = useModels();
   const [modelPath, setModelPath] = useState("");
   const [data, setData] = useState([]);
   const [uniqueLevels, setUniqueLevels] = useState([]);

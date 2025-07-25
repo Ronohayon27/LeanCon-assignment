@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useRef, useState } from "react";
 import * as OBC from "@thatopen/components";
 import * as OBF from "@thatopen/components-front";
@@ -8,38 +6,19 @@ import * as THREE from "three";
 export default function IfcViewer({ selectedElementIds = [], modelPath }) {
   const containerRef = useRef(null);
   const viewerRef = useRef(null);
-  const componentsRef = useRef(null);
-  const modelRef = useRef(null); // Reference to store the loaded model
-  const highlighterRef = useRef(null); // Reference to store the highlighter
-  const [isInitialized, setIsInitialized] = useState(false); // Track initialization state
-  const [isModelLoading, setIsModelLoading] = useState(true); // Track model loading state
-  const [loadingProgress, setLoadingProgress] = useState(0); // Track loading progress
+  const highlighterRef = useRef(null);
+  const modelRef = useRef(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [isModelLoading, setIsModelLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
 
-  // Effect for initial setup
+  // Initialize viewer once
   useEffect(() => {
-    // Reset initialization state when model path changes
-    setIsInitialized(false);
-    setIsModelLoading(true);
-    setLoadingProgress(0);
-
-    const init = async () => {
+    const initViewer = async () => {
       const container = containerRef.current;
-      if (!container) return;
-
-      // Clean up previous instance if it exists
-      if (componentsRef.current) {
-        try {
-          componentsRef.current.dispose();
-        } catch (error) {
-          console.warn("Error during cleanup:", error);
-        }
-      }
+      if (!container || viewerRef.current) return;
 
       const components = new OBC.Components();
-      // Store components reference
-      componentsRef.current = components;
-      viewerRef.current = { components };
-
       const worlds = components.get(OBC.Worlds);
       const world = worlds.create();
 
@@ -53,62 +32,10 @@ export default function IfcViewer({ selectedElementIds = [], modelPath }) {
 
       components.init();
 
-      // Set up the highlighter
-      components.get(OBC.Raycasters).get(world);
-      const highlighter = components.get(OBF.Highlighter);
-      highlighter.setup({
-        world,
-        selectMaterialDefinition: {
-          color: new THREE.Color("#ff0000"), // Red color for highlighting
-          opacity: 0.8,
-          transparent: true,
-          renderedFaces: 0,
-        },
-      });
-
-      // Store highlighter reference for later use
-      highlighterRef.current = highlighter;
-
-      // Add event listeners to capture element IDs when clicking on the model
-      highlighter.events.select.onHighlight.add(async (modelIdMap) => {
-        // Get the fragments manager
-        const fragmentsManager = components.get(OBC.FragmentsManager);
-
-        // Get detailed information about the selected elements
-        for (const [modelId, localIds] of Object.entries(modelIdMap)) {
-          const model = fragmentsManager.list.get(modelId);
-          if (!model) {
-            continue;
-          }
-
-          // Try different ways to get element data
-          for (const localId of localIds) {
-            // getItemsData for highlight
-            try {
-              if (model.getItemsData) {
-                await model.getItemsData([localId]);
-              }
-            } catch (e) {
-              console.log(e);
-            }
-          }
-        }
-      });
-
-      highlighter.events.select.onClear.add(() => {});
-
-      // Store references
-      highlighterRef.current = highlighter;
-      viewerRef.current = { components, world, highlighter };
-
-      // Create grid component
       const grids = components.get(OBC.Grids);
       const grid = grids.create(world);
-      grid.three.position.set(0, 0, 0); // Set XYZ position
-      grid.three.updateMatrixWorld(true);
       grid.three.visible = false;
 
-      // Set up IFC loader first
       const ifcLoader = components.get(OBC.IfcLoader);
       await ifcLoader.setup({
         autoSetWasm: false,
@@ -118,202 +45,118 @@ export default function IfcViewer({ selectedElementIds = [], modelPath }) {
         },
       });
 
-      // Initialize fragments manager AFTER IFC loader setup
-      const githubUrl =
-        "https://thatopen.github.io/engine_fragment/resources/worker.mjs";
-      const fetchedUrl = await fetch(githubUrl);
-      const workerBlob = await fetchedUrl.blob();
-      const workerFile = new File([workerBlob], "worker.mjs", {
-        type: "text/javascript",
-      });
-      const workerUrl = URL.createObjectURL(workerFile);
-
+      const res = await fetch(
+        "https://thatopen.github.io/engine_fragment/resources/worker.mjs"
+      );
+      const blob = await res.blob();
+      const workerUrl = URL.createObjectURL(
+        new File([blob], "worker.mjs", { type: "text/javascript" })
+      );
       const fragments = components.get(OBC.FragmentsManager);
-
       await fragments.init(workerUrl);
 
-      // Mark as initialized after fragments manager is ready
-      setIsInitialized(true);
-
-      // Set up event listeners for when models are loaded
-      fragments.list.onItemSet.add(async ({ value: model }) => {
-        model.useCamera(world.camera.three);
-        world.scene.three.add(model.object);
-
-        // Store model reference for highlighting
-        modelRef.current = model;
-
-        // Force multiple fragment updates to ensure full rendering
-
-        // Initial update
-        fragments.core.update(true);
-
-        // Force scene update
-        world.scene.three.updateMatrixWorld(true);
-
-        // Add camera event listeners to maintain fragment updates
-        world.camera.controls.addEventListener("rest", () => {
-          if (fragments && fragments.core) {
-            fragments.core.update(true);
-          }
-        });
-
-        world.camera.controls.addEventListener("change", () => {
-          if (fragments && fragments.core) {
-            // Throttle updates during movement
-            if (!world.camera.controls._updating) {
-              world.camera.controls._updating = true;
-              setTimeout(() => {
-                fragments.core.update(false); // Lighter update during movement
-                world.camera.controls._updating = false;
-              }, 50);
-            }
-          }
-        });
-        setIsModelLoading(false);
+      const raycaster = components.get(OBC.Raycasters).get(world);
+      const highlighter = components.get(OBF.Highlighter);
+      highlighter.setup({
+        world,
+        selectMaterialDefinition: {
+          color: new THREE.Color("#ff0000"),
+          opacity: 0.8,
+          transparent: true,
+          renderedFaces: 0,
+        },
       });
 
-      // Try to load the IFC file - with proper error handling
-      try {
-        await loadIfc(modelPath, ifcLoader, fragments);
-      } catch (error) {
-        console.error(error);
-
-        setIsModelLoading(false);
-      }
-
-      // Initialization is now marked earlier after fragments manager is ready
+      highlighterRef.current = highlighter;
+      viewerRef.current = { components, world, ifcLoader, fragments };
+      world.camera.controls.addEventListener("rest", () =>
+        fragments.core.update(true)
+      );
+      setIsInitialized(true);
     };
 
-    init();
+    initViewer();
 
-    // Cleanup function when component unmounts or modelPath changes
     return () => {
-      if (componentsRef.current) {
-        try {
-          componentsRef.current.dispose();
-          componentsRef.current = null;
-          viewerRef.current = null;
-          highlighterRef.current = null;
-          setIsInitialized(false);
-          setIsModelLoading(true);
-          setLoadingProgress(0);
-        } catch (error) {
-          console.warn("Error during cleanup:", error);
-        }
+      if (viewerRef.current) {
+        viewerRef.current.components.dispose();
+        viewerRef.current = null;
+        highlighterRef.current = null;
+        modelRef.current = null;
+        setIsInitialized(false);
+        setIsModelLoading(false);
+        setLoadingProgress(0);
       }
     };
-  }, [modelPath]); // Re-initialize when model path changes
+  }, []);
 
-  // Effect for highlighting elements
+  // Load IFC when modelPath changes
   useEffect(() => {
-    // Skip if not initialized or no elements to highlight
-    if (
-      !isInitialized ||
-      !componentsRef.current ||
-      !viewerRef.current ||
-      !highlighterRef.current
-    ) {
-      return;
-    }
+    if (!isInitialized || !modelPath || !viewerRef.current) return;
 
-    const highlightElements = async () => {
-      try {
-        const highlighter = highlighterRef.current;
-        const { components } = viewerRef.current;
+    const loadModel = async () => {
+      setIsModelLoading(true);
+      setLoadingProgress(0);
 
-        // Check if fragments manager exists and is initialized
-        const fragments = components.get(OBC.FragmentsManager);
-        if (!fragments || !fragments.list) {
-          return;
-        }
-
-        // Clear any previous highlights
-        await highlighter.clear("select");
-
-        // If no elements selected, just return after clearing
-        if (selectedElementIds.length === 0) {
-          return;
-        }
-
-        // Convert IDs to numbers if they're strings
-        const expressIds = selectedElementIds.map((id) =>
-          typeof id === "string" ? parseInt(id) : id
-        );
-
-        const modelIdMap = {};
-
-        // Get all fragment models and try to map express IDs directly
-        for (const [modelId] of fragments.list) {
-          // let's try direct mapping first
-          if (!modelIdMap[modelId]) {
-            modelIdMap[modelId] = new Set();
-          }
-
-          // Add all express IDs as local IDs for this model
-          expressIds.forEach((expressId) => {
-            modelIdMap[modelId].add(expressId);
-          });
-        }
-
-        // Try to highlight using the direct mapping
-        if (Object.keys(modelIdMap).length > 0) {
-          try {
-            await highlighter.highlightByID("select", modelIdMap, true);
-          } catch (error) {
-            console.error(error);
-          }
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    highlightElements();
-  }, [selectedElementIds, isInitialized]);
-
-  const loadIfc = async (path, ifcLoader) => {
-    try {
-      const file = await fetch(path);
-
-      if (!file.ok) {
-        throw new Error(
-          `Failed to fetch IFC file: ${file.status} ${file.statusText}`
-        );
-      }
-
-      const data = await file.arrayBuffer();
-      const buffer = new Uint8Array(data);
+      const { components, world, ifcLoader, fragments } = viewerRef.current;
 
       try {
+        const file = await fetch(modelPath);
+        const buffer = new Uint8Array(await file.arrayBuffer());
+
+        fragments.list.clear();
+
+        fragments.list.onItemSet.add(({ value: model }) => {
+          model.useCamera(world.camera.three);
+          world.scene.three.add(model.object);
+          modelRef.current = model;
+          fragments.core.update(true);
+          world.scene.three.updateMatrixWorld(true);
+          setIsModelLoading(false);
+        });
+
         await ifcLoader.load(buffer, false, "ifc-model", {
           processData: {
-            progressCallback: (progress) => {
-              setLoadingProgress(progress);
-            },
+            progressCallback: (p) => setLoadingProgress(p),
           },
         });
-      } catch (loadError) {
-        // Suppress the "fragments not initialized" error if it contains this message
-        // but still allow the loading to continue since it works anyway
-        if (
-          loadError.message &&
-          loadError.message.includes("initialize fragments")
-        ) {
-          // Don't throw the error, just log it and continue
-        } else {
-          // For other errors, still throw them
-          throw loadError;
-        }
-      }
-    } catch (error) {
-      // Only log and stop loading for actual critical errors
-      if (!error.message || !error.message.includes("initialize fragments")) {
+      } catch (err) {
+        console.error("Failed to load IFC:", err);
         setIsModelLoading(false);
-        throw error;
       }
-    }
-  };
+    };
+
+    loadModel();
+  }, [modelPath, isInitialized]);
+
+  // Highlight selected elements
+  useEffect(() => {
+    if (!isInitialized || !highlighterRef.current || !viewerRef.current) return;
+
+    const highlight = async () => {
+      const highlighter = highlighterRef.current;
+      const fragments = viewerRef.current.components.get(OBC.FragmentsManager);
+
+      await highlighter.clear("select");
+
+      if (!selectedElementIds.length) return;
+
+      const expressIds = selectedElementIds.map((id) => +id);
+      const modelIdMap = {};
+
+      for (const [modelId] of fragments.list) {
+        modelIdMap[modelId] = new Set(expressIds);
+      }
+
+      try {
+        await highlighter.highlightByID("select", modelIdMap, true);
+      } catch (e) {
+        console.warn("Highlight error:", e);
+      }
+    };
+
+    highlight();
+  }, [selectedElementIds, isInitialized]);
 
   return (
     <div className="relative w-full h-full bg-white">

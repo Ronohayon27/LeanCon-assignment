@@ -24,6 +24,7 @@ def save_ifc_model(file_name, file_path, parsed_data):
         "status": "uploaded",
         "id": str(result.inserted_id),
         "filename": saved_file_name,
+        "elements": parsed_data["metadata"].get("total_processed_elements"),
         "summary": parsed_data["metadata"]
     }
 
