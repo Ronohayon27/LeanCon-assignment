@@ -9,6 +9,9 @@ services:
       - ./backend/ifc:/app/ifc
     environment:
       - PYTHONPATH=/app
+      - MONGO_URI=mongodb://mongo:27017
+    depends_on:
+      - mongo
     restart: unless-stopped
 
   frontend:
@@ -24,3 +27,15 @@ services:
     environment:
       - VITE_API_URL=http://localhost:8000
     restart: unless-stopped
+
+  mongo:
+    image: mongo
+    container_name: leancon-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
