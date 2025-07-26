@@ -5,6 +5,7 @@ from app.core.config import settings
 from fastapi.staticfiles import StaticFiles
 import os
 
+# for docker
 IFC_DIR = os.path.join(os.getcwd(), "ifc") 
 
 

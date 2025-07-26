@@ -175,7 +175,8 @@ LeanCon-assignment/
 │   │   ├── main.py            # FastAPI entry point
 │   │   ├── api/               # API routes
 │   │   ├── core/              # Configuration
-│   │   └── services/          # Business logic
+│   │   ├── services/          # Business logic
+|   |   └── dataBase/          # mongo connection
 │   └── ifc/                   # IFC model files
 │
 └── frontend/                   # React Frontend

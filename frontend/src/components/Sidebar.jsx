@@ -64,7 +64,7 @@ export default function Sidebar({ activeModelId, onModelSelect }) {
             </li>
           ))}
         </ul>
-        {models.length <= 3 && (
+        {models.length < 3 && (
           <div className="mt-4">
             <div className="w-10 h-10 mx-auto group rounded-full transition-all duration-30 flex items-center justify-center">
               <Button

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { fetchModelsList } from "@/services/modelService";
 import { ModelsContext } from "./ModelsContext";
 
+// provider for managing the models data swapping
 export function ModelsProvider({ children }) {
   const [models, setModels] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -1,5 +1,4 @@
 import ifcopenshell
-import json
 import re
 from collections import defaultdict
 import datetime
@@ -17,7 +16,7 @@ def convert_to_meters(value, unit_type="length"):
     if value is None:
         return None
     
-    # Assuming IFC values are typically in mm, convert to meters
+    # Assuming IFC values are typically in mm, convert to meters if neccesery
     if unit_type == "length":
         return value / 1000.0  # mm to m
     elif unit_type == "area":
@@ -67,10 +66,11 @@ def get_element_level_with_fallback(element, ifc_file):
                                 elif prop.Name and 'work plane' in prop.Name.lower():
                                     if prop.NominalValue:
                                         return str(prop.NominalValue.wrappedValue)
-        except:
-            pass
+        except Exception as e:
+            print(f"Warning: Error finding level for element {element}: {e}")
         
         # Method 4: Try to infer level from element placement Z-coordinate, only if there isnt a specific level yet
+        # this method is for bonus
         try:
             if hasattr(element, 'ObjectPlacement') and element.ObjectPlacement:
                 placement = element.ObjectPlacement
@@ -98,10 +98,9 @@ def get_element_level_with_fallback(element, ifc_file):
                                     return level_name
                                 return f"Level_{closest_storey.GlobalId[:8]}"
                             else:
-                                # Create a reference level based on Z coordinate (convert to meters)
-                                return f"Z_{convert_to_meters(z_coord):.1f}m"
-        except:
-            pass
+                                return "Unknown Level"
+        except Exception as e:
+            print(f"Warning: Error finding level for element {element}: {e}")
         
         return "Unknown Level"
     except Exception as e:
@@ -304,13 +303,3 @@ def parse_geometry_data(file_path):
     print(f"  Total aggregated groups: {len(final_data)}")
     
     return result
-
-def save_parsed_data(data, output_file_path):
-    """Save the parsed data to a JSON file"""
-    try:
-        with open(output_file_path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-        print(f"Parsed geometry data saved to: {output_file_path}")
-    except Exception as e:
-        print(f"Error saving file: {e}")
-

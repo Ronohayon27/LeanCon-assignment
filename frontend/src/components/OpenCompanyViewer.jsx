@@ -12,9 +12,10 @@ export default function IfcViewer({ selectedElementIds = [], modelPath }) {
   const [isModelLoading, setIsModelLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
 
-  // Initialize viewer once
+  // Initialize viewer
   useEffect(() => {
     const initViewer = async () => {
+      // creating a simple scene
       const container = containerRef.current;
       if (!container || viewerRef.current) return;
 
@@ -34,8 +35,9 @@ export default function IfcViewer({ selectedElementIds = [], modelPath }) {
 
       const grids = components.get(OBC.Grids);
       const grid = grids.create(world);
-      grid.three.visible = false;
+      grid.three.visible = false; // for displaying the grid, needs to be true
 
+      // creating fragment
       const ifcLoader = components.get(OBC.IfcLoader);
       await ifcLoader.setup({
         autoSetWasm: false,
@@ -52,10 +54,11 @@ export default function IfcViewer({ selectedElementIds = [], modelPath }) {
       const workerUrl = URL.createObjectURL(
         new File([blob], "worker.mjs", { type: "text/javascript" })
       );
+
       const fragments = components.get(OBC.FragmentsManager);
       await fragments.init(workerUrl);
 
-      const raycaster = components.get(OBC.Raycasters).get(world);
+      // inintlized the highlighter
       const highlighter = components.get(OBF.Highlighter);
       highlighter.setup({
         world,
